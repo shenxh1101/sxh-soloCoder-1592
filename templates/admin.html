@@ -61,6 +61,11 @@
                     {% elif locker.status == 'occupied' %}占用
                     {% else %}故障{% endif %}
                 </div>
+                {% if locker.status == 'fault' and locker.fault_updated_at %}
+                <div class="locker-fault-time">
+                    <small>🕐 {{ locker.fault_updated_at.strftime('%m-%d %H:%M') }}</small>
+                </div>
+                {% endif %}
                 <div class="locker-actions">
                     <button class="btn btn-small btn-blue" onclick="openLocker({{ locker.id }})">开箱</button>
                     <button class="btn btn-small {% if locker.status == 'fault' %}btn-green{% else %}btn-red{% endif %}"
@@ -108,6 +113,14 @@
                         <option value="stored" {% if filter_status == 'stored' %}selected{% endif %}>待取件</option>
                         <option value="picked" {% if filter_status == 'picked' %}selected{% endif %}>已取件</option>
                     </select>
+                </div>
+                <div class="filter-item">
+                    <label>起始日期</label>
+                    <input type="date" name="date_from" value="{{ filter_date_from }}">
+                </div>
+                <div class="filter-item">
+                    <label>结束日期</label>
+                    <input type="date" name="date_to" value="{{ filter_date_to }}">
                 </div>
             </div>
             <div class="filter-actions">

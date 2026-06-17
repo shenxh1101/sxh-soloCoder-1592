@@ -22,6 +22,7 @@
             <p>用户凭取件码取件</p>
         </a>
 
+        {% if session.get('admin_id') %}
         <a href="{{ url_for('admin') }}" class="action-card admin-card">
             <div class="card-icon">⚙️</div>
             <h3>管理后台</h3>
@@ -33,6 +34,7 @@
             <h3>统计报表</h3>
             <p>查看运营数据统计</p>
         </a>
+        {% endif %}
     </div>
 </div>
 {% endblock %}

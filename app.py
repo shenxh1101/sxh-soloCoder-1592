@@ -32,6 +32,7 @@ class Locker(db.Model):
     code = db.Column(db.String(20), unique=True, nullable=False)
     status = db.Column(db.String(20), default='idle')
     size = db.Column(db.String(10), default='medium')
+    fault_updated_at = db.Column(db.DateTime)
 
 
 class Package(db.Model):
@@ -145,6 +146,29 @@ def logout():
     return redirect(url_for('index'))
 
 
+@app.route('/admin/change_password', methods=['GET', 'POST'])
+@admin_required
+def change_password():
+    if request.method == 'POST':
+        old_password = request.form.get('old_password', '')
+        new_password = request.form.get('new_password', '')
+        confirm_password = request.form.get('confirm_password', '')
+
+        admin = Admin.query.get(session['admin_id'])
+        if not admin or not check_password_hash(admin.password_hash, old_password):
+            flash('原密码错误', 'error')
+        elif len(new_password) < 6:
+            flash('新密码至少6位', 'error')
+        elif new_password != confirm_password:
+            flash('两次输入的新密码不一致', 'error')
+        else:
+            admin.password_hash = generate_password_hash(new_password)
+            db.session.commit()
+            flash('密码修改成功', 'success')
+            return redirect(url_for('admin'))
+    return render_template('change_password.html')
+
+
 @app.route('/store', methods=['GET', 'POST'])
 def store_package():
     if request.method == 'POST':
@@ -234,6 +258,8 @@ def admin():
     filter_tracking = request.args.get('tracking', '').strip()
     filter_locker = request.args.get('locker', '').strip()
     filter_status = request.args.get('status', '').strip()
+    filter_date_from = request.args.get('date_from', '').strip()
+    filter_date_to = request.args.get('date_to', '').strip()
 
     query = Package.query
 
@@ -245,8 +271,20 @@ def admin():
         query = query.join(Locker).filter(Locker.code.contains(filter_locker))
     if filter_status:
         query = query.filter(Package.status == filter_status)
+    if filter_date_from:
+        try:
+            dt_from = datetime.strptime(filter_date_from, '%Y-%m-%d')
+            query = query.filter(Package.stored_at >= dt_from)
+        except ValueError:
+            pass
+    if filter_date_to:
+        try:
+            dt_to = datetime.strptime(filter_date_to, '%Y-%m-%d') + timedelta(days=1)
+            query = query.filter(Package.stored_at < dt_to)
+        except ValueError:
+            pass
 
-    packages = query.order_by(Package.stored_at.desc()).limit(200).all()
+    packages = query.order_by(Package.stored_at.desc()).limit(500).all()
 
     lockers = Locker.query.all()
     now = datetime.now()
@@ -283,7 +321,9 @@ def admin():
                          filter_phone=filter_phone,
                          filter_tracking=filter_tracking,
                          filter_locker=filter_locker,
-                         filter_status=filter_status)
+                         filter_status=filter_status,
+                         filter_date_from=filter_date_from,
+                         filter_date_to=filter_date_to)
 
 
 @app.route('/admin/overdue')
@@ -327,6 +367,29 @@ def mark_notified(package_id):
     })
 
 
+@app.route('/admin/overdue/batch_notify', methods=['POST'])
+@admin_required
+def batch_notify():
+    data = request.get_json(silent=True) or {}
+    package_ids = data.get('ids', [])
+    if not package_ids:
+        return jsonify({'success': False, 'message': '未选择任何包裹'}), 400
+
+    now = datetime.now()
+    updated = Package.query.filter(Package.id.in_(package_ids)).update(
+        {Package.notified_at: now},
+        synchronize_session=False
+    )
+    db.session.commit()
+
+    return jsonify({
+        'success': True,
+        'message': f'已批量标记 {updated} 个包裹的通知时间',
+        'notified_at': now.strftime('%Y-%m-%d %H:%M'),
+        'count': updated
+    })
+
+
 @app.route('/admin/locker/<int:locker_id>/open', methods=['POST'])
 @admin_required
 def open_locker(locker_id):
@@ -341,16 +404,23 @@ def open_locker(locker_id):
 @admin_required
 def toggle_fault(locker_id):
     locker = Locker.query.get_or_404(locker_id)
+    now = datetime.now()
     if locker.status == 'fault':
         locker.status = 'idle'
+        locker.fault_updated_at = now
         message = f'格口 {locker.code} 已恢复正常'
     elif locker.status == 'occupied':
         return jsonify({'success': False, 'message': '格口正在使用中，无法标记故障'})
     else:
         locker.status = 'fault'
+        locker.fault_updated_at = now
         message = f'格口 {locker.code} 已标记为故障'
     db.session.commit()
-    return jsonify({'success': True, 'message': message})
+    return jsonify({
+        'success': True,
+        'message': message,
+        'fault_updated_at': now.strftime('%Y-%m-%d %H:%M')
+    })
 
 
 def calc_day_utilization(target_date):
