@@ -7,6 +7,11 @@
     <div class="page-header">
         <h2>⏰ 超时包裹提醒</h2>
         <div class="header-actions">
+            {% if packages %}
+            <button class="btn btn-small btn-green" onclick="batchNotify()" id="batchNotifyBtn" disabled>
+                📞 批量标记已通知 (<span id="selectedCount">0</span>)
+            </button>
+            {% endif %}
             <a href="{{ url_for('admin') }}" class="btn btn-small btn-secondary">← 返回后台</a>
         </div>
     </div>
@@ -34,6 +39,9 @@
             <table class="data-table">
                 <thead>
                     <tr>
+                        <th style="width:40px;">
+                            <input type="checkbox" id="selectAll" onchange="toggleSelectAll()">
+                        </th>
                         <th>格口</th>
                         <th>快递单号</th>
                         <th>完整手机号</th>
@@ -46,7 +54,10 @@
                 </thead>
                 <tbody>
                     {% for pkg in packages %}
-                    <tr class="overdue-row">
+                    <tr class="overdue-row" id="row-{{ pkg.id }}">
+                        <td>
+                            <input type="checkbox" class="pkg-checkbox" value="{{ pkg.id }}" onchange="updateSelectedCount()">
+                        </td>
                         <td><strong>{{ pkg.locker_code }}</strong></td>
                         <td>{{ pkg.tracking_no }}</td>
                         <td>
@@ -71,18 +82,11 @@
                             {% endif %}
                         </td>
                         <td>
-                            {% if not pkg.notified_at %}
-                            <button class="btn btn-small btn-green"
+                            <button class="btn btn-small {% if pkg.notified_at %}btn-secondary{% else %}btn-green{% endif %}"
                                     id="notify-btn-{{ pkg.id }}"
                                     onclick="markNotified({{ pkg.id }})">
-                                📞 记录已通知
+                                {% if pkg.notified_at %}🔄 更新时间{% else %}📞 记录已通知{% endif %}
                             </button>
-                            {% else %}
-                            <button class="btn btn-small btn-secondary"
-                                    onclick="markNotified({{ pkg.id }})">
-                                🔄 更新时间
-                            </button>
-                            {% endif %}
                         </td>
                     </tr>
                     {% endfor %}
@@ -109,6 +113,69 @@
 </div>
 
 <script>
+function toggleSelectAll() {
+    const checkAll = document.getElementById('selectAll').checked;
+    document.querySelectorAll('.pkg-checkbox').forEach(cb => {
+        cb.checked = checkAll;
+    });
+    updateSelectedCount();
+}
+
+function updateSelectedCount() {
+    const checked = document.querySelectorAll('.pkg-checkbox:checked');
+    const count = checked.length;
+    document.getElementById('selectedCount').textContent = count;
+    document.getElementById('batchNotifyBtn').disabled = (count === 0);
+}
+
+function batchNotify() {
+    const checked = document.querySelectorAll('.pkg-checkbox:checked');
+    if (checked.length === 0) {
+        alert('请先勾选要标记的包裹');
+        return;
+    }
+    if (!confirm(`确认批量标记 ${checked.length} 个包裹的通知时间吗？`)) return;
+
+    const ids = Array.from(checked).map(cb => parseInt(cb.value));
+
+    fetch('/admin/overdue/batch_notify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: ids })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            ids.forEach(id => {
+                const statusEl = document.getElementById(`notify-status-${id}`);
+                if (statusEl) {
+                    statusEl.innerHTML = `
+                        <span class="notify-badge notified">
+                            ✅ 已通知<br>
+                            <small>${data.notified_at}</small>
+                        </span>
+                    `;
+                }
+                const btnEl = document.getElementById(`notify-btn-${id}`);
+                if (btnEl) {
+                    btnEl.textContent = '🔄 更新时间';
+                    btnEl.className = 'btn btn-small btn-secondary';
+                }
+                const cb = document.querySelector(`.pkg-checkbox[value="${id}"]`);
+                if (cb) cb.checked = false;
+            });
+            document.getElementById('selectAll').checked = false;
+            updateSelectedCount();
+            alert(data.message);
+        } else {
+            alert(data.message || '批量操作失败');
+        }
+    })
+    .catch(err => {
+        alert('批量操作失败：' + err);
+    });
+}
+
 function markNotified(packageId) {
     if (!confirm('确认记录/更新该包裹的通知时间吗？')) return;
     fetch(`/admin/overdue/${packageId}/notify`, { method: 'POST' })
