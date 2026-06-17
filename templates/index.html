@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+
+{% block title %}首页 - 智能快递柜系统{% endblock %}
+
+{% block content %}
+<div class="home-page">
+    <div class="hero">
+        <h2>欢迎使用智能快递柜</h2>
+        <p>安全、便捷、高效的包裹存取服务</p>
+    </div>
+
+    <div class="action-cards">
+        <a href="{{ url_for('store_package') }}" class="action-card store-card">
+            <div class="card-icon">📥</div>
+            <h3>存件</h3>
+            <p>快递员存入包裹</p>
+        </a>
+
+        <a href="{{ url_for('pickup_package') }}" class="action-card pickup-card">
+            <div class="card-icon">📤</div>
+            <h3>取件</h3>
+            <p>用户凭取件码取件</p>
+        </a>
+
+        <a href="{{ url_for('admin') }}" class="action-card admin-card">
+            <div class="card-icon">⚙️</div>
+            <h3>管理后台</h3>
+            <p>格口管理与包裹监控</p>
+        </a>
+
+        <a href="{{ url_for('report') }}" class="action-card report-card">
+            <div class="card-icon">📊</div>
+            <h3>统计报表</h3>
+            <p>查看运营数据统计</p>
+        </a>
+    </div>
+</div>
+{% endblock %}

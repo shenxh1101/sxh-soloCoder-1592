@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+
+{% block title %}取件成功 - 智能快递柜系统{% endblock %}
+
+{% block content %}
+<div class="success-page">
+    <div class="success-icon">✅</div>
+    <h2>取件成功！</h2>
+    <p class="sub-message">格口已打开，请取出您的包裹</p>
+
+    <div class="success-details">
+        <div class="detail-item">
+            <span class="label">快递单号：</span>
+            <span class="value">{{ package.tracking_no }}</span>
+        </div>
+        <div class="detail-item">
+            <span class="label">存入时间：</span>
+            <span class="value">{{ package.stored_at.strftime('%Y-%m-%d %H:%M:%S') }}</span>
+        </div>
+        <div class="detail-item">
+            <span class="label">取件时间：</span>
+            <span class="value">{{ package.picked_at.strftime('%Y-%m-%d %H:%M:%S') }}</span>
+        </div>
+    </div>
+
+    <div class="actions">
+        <a href="{{ url_for('pickup_package') }}" class="btn btn-primary">继续取件</a>
+        <a href="{{ url_for('index') }}" class="btn btn-secondary">返回首页</a>
+    </div>
+</div>
+{% endblock %}

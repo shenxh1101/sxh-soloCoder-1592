@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+
+{% block title %}取件 - 智能快递柜系统{% endblock %}
+
+{% block content %}
+<div class="pickup-page">
+    <h2>📤 取件</h2>
+
+    <form method="POST" class="pickup-form">
+        <div class="form-group">
+            <label for="pickup_code">取件码</label>
+            <input type="text" id="pickup_code" name="pickup_code" required placeholder="请输入6位取件码" maxlength="6" pattern="\d{6}">
+        </div>
+
+        <div class="form-group">
+            <label for="phone">手机号</label>
+            <input type="tel" id="phone" name="phone" required placeholder="请输入收件人手机号" pattern="1[3-9]\d{9}">
+        </div>
+
+        <button type="submit" class="btn btn-primary">确认取件</button>
+    </form>
+
+    <div class="tips">
+        <p>💡 提示：</p>
+        <ul>
+            <li>请输入收到的6位取件码</li>
+            <li>手机号需与存件时填写的一致</li>
+            <li>如有问题请联系管理员</li>
+        </ul>
+    </div>
+</div>
+{% endblock %}

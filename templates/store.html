@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+
+{% block title %}存件 - 智能快递柜系统{% endblock %}
+
+{% block content %}
+<div class="store-page">
+    <h2>📥 存件</h2>
+
+    {% if lockers %}
+    <div class="locker-selection">
+        <h3>选择空闲格口</h3>
+        <div class="locker-grid">
+            {% for locker in lockers %}
+            <div class="locker-item locker-idle" data-locker-id="{{ locker.id }}" data-locker-code="{{ locker.code }}" data-locker-size="{{ locker.size }}">
+                <div class="locker-code">{{ locker.code }}</div>
+                <div class="locker-size">
+                    {% if locker.size == 'small' %}小号
+                    {% elif locker.size == 'medium' %}中号
+                    {% else %}大号{% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <form method="POST" class="store-form" id="storeForm">
+        <input type="hidden" name="locker_id" id="selectedLockerId">
+
+        <div class="selected-locker-info" id="selectedLockerInfo" style="display:none;">
+            <p>已选择格口：<strong id="selectedLockerCode"></strong></p>
+        </div>
+
+        <div class="form-group">
+            <label for="tracking_no">快递单号</label>
+            <input type="text" id="tracking_no" name="tracking_no" required placeholder="请输入快递单号">
+        </div>
+
+        <div class="form-group">
+            <label for="phone">收件人手机号</label>
+            <input type="tel" id="phone" name="phone" required placeholder="请输入11位手机号" pattern="1[3-9]\d{9}">
+        </div>
+
+        <button type="submit" class="btn btn-primary" id="submitBtn" disabled>确认存件</button>
+    </form>
+    {% else %}
+    <div class="empty-state">
+        <p>😢 暂无空闲格口，请稍后再试</p>
+        <a href="{{ url_for('index') }}" class="btn btn-secondary">返回首页</a>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+document.querySelectorAll('.locker-item').forEach(item => {
+    item.addEventListener('click', function() {
+        document.querySelectorAll('.locker-item').forEach(i => i.classList.remove('selected'));
+        this.classList.add('selected');
+        document.getElementById('selectedLockerId').value = this.dataset.lockerId;
+        document.getElementById('selectedLockerCode').textContent = this.dataset.lockerCode;
+        document.getElementById('selectedLockerInfo').style.display = 'block';
+        document.getElementById('submitBtn').disabled = false;
+    });
+});
+</script>
+{% endblock %}

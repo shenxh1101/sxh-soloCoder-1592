@@ -1,0 +1,145 @@
+{% extends 'base.html' %}
+
+{% block title %}管理后台 - 智能快递柜系统{% endblock %}
+
+{% block content %}
+<div class="admin-page">
+    <h2>⚙️ 管理后台</h2>
+
+    <div class="stats-cards">
+        <div class="stat-card">
+            <div class="stat-label">总格口数</div>
+            <div class="stat-value">{{ stats.total_lockers }}</div>
+        </div>
+        <div class="stat-card stat-green">
+            <div class="stat-label">空闲格口</div>
+            <div class="stat-value">{{ stats.idle_lockers }}</div>
+        </div>
+        <div class="stat-card stat-orange">
+            <div class="stat-label">占用格口</div>
+            <div class="stat-value">{{ stats.occupied_lockers }}</div>
+        </div>
+        <div class="stat-card stat-red">
+            <div class="stat-label">故障格口</div>
+            <div class="stat-value">{{ stats.fault_lockers }}</div>
+        </div>
+        <div class="stat-card stat-blue">
+            <div class="stat-label">待取包裹</div>
+            <div class="stat-value">{{ stats.stored_packages }}</div>
+        </div>
+        <div class="stat-card stat-red">
+            <div class="stat-label">超时包裹</div>
+            <div class="stat-value">{{ stats.overdue_packages }}</div>
+        </div>
+    </div>
+
+    <section class="admin-section">
+        <h3>格口状态</h3>
+        <div class="locker-grid admin-locker-grid">
+            {% for locker in lockers %}
+            <div class="locker-item
+                {% if locker.status == 'idle' %}locker-idle
+                {% elif locker.status == 'occupied' %}locker-occupied
+                {% else %}locker-fault{% endif %}"
+                data-locker-id="{{ locker.id }}"
+                data-locker-code="{{ locker.code }}">
+                <div class="locker-code">{{ locker.code }}</div>
+                <div class="locker-size">
+                    {% if locker.size == 'small' %}小号
+                    {% elif locker.size == 'medium' %}中号
+                    {% else %}大号{% endif %}
+                </div>
+                <div class="locker-status">
+                    {% if locker.status == 'idle' %}空闲
+                    {% elif locker.status == 'occupied' %}占用
+                    {% else %}故障{% endif %}
+                </div>
+                <div class="locker-actions">
+                    <button class="btn btn-small btn-blue" onclick="openLocker({{ locker.id }})">开箱</button>
+                    <button class="btn btn-small {% if locker.status == 'fault' %}btn-green{% else %}btn-red{% endif %}"
+                            onclick="toggleFault({{ locker.id }})">
+                        {% if locker.status == 'fault' %}恢复{% else %}故障{% endif %}
+                    </button>
+                </div>
+                {% if locker.package %}
+                <div class="locker-package-info">
+                    <small>📱 {{ locker.package.phone[:3] }}****{{ locker.package.phone[-4:] }}</small>
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <section class="admin-section">
+        <h3>包裹记录（最近50条）</h3>
+        <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>格口</th>
+                        <th>快递单号</th>
+                        <th>手机号</th>
+                        <th>取件码</th>
+                        <th>存入时间</th>
+                        <th>取件时间</th>
+                        <th>状态</th>
+                        <th>超时时长</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for pkg in packages %}
+                    <tr class="{% if pkg.status == 'stored' and pkg.overdue_hours > 0 %}overdue-row{% endif %}">
+                        <td>{{ pkg.locker.code if pkg.locker else '-' }}</td>
+                        <td>{{ pkg.tracking_no }}</td>
+                        <td>{{ pkg.phone[:3] }}****{{ pkg.phone[-4:] }}</td>
+                        <td>{{ pkg.pickup_code }}</td>
+                        <td>{{ pkg.stored_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                        <td>{{ pkg.picked_at.strftime('%Y-%m-%d %H:%M') if pkg.picked_at else '-' }}</td>
+                        <td>
+                            <span class="status-badge
+                                {% if pkg.status == 'stored' %}status-stored
+                                {% else %}status-picked{% endif %}">
+                                {% if pkg.status == 'stored' %}待取件{% else %}已取件{% endif %}
+                            </span>
+                        </td>
+                        <td>
+                            {% if pkg.status == 'stored' and pkg.overdue_hours > 0 %}
+                            <span class="overdue-badge">超时 {{ pkg.overdue_hours }}h</span>
+                            {% else %}
+                            -
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+</div>
+
+<script>
+function openLocker(lockerId) {
+    if (!confirm('确认打开该格口吗？')) return;
+    fetch(`/admin/locker/${lockerId}/open`, { method: 'POST' })
+        .then(r => r.json())
+        .then(data => {
+            alert(data.message);
+        });
+}
+
+function toggleFault(lockerId) {
+    if (!confirm('确认执行此操作吗？')) return;
+    fetch(`/admin/locker/${lockerId}/toggle_fault`, { method: 'POST' })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert(data.message);
+            }
+        });
+}
+</script>
+{% endblock %}

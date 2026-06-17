@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+
+{% block title %}统计报表 - 智能快递柜系统{% endblock %}
+
+{% block content %}
+<div class="report-page">
+    <h2>📊 统计报表</h2>
+
+    <div class="stats-cards">
+        <div class="stat-card stat-green">
+            <div class="stat-label">7日总存件</div>
+            <div class="stat-value">{{ total_stored }}</div>
+        </div>
+        <div class="stat-card stat-blue">
+            <div class="stat-label">7日总取件</div>
+            <div class="stat-value">{{ total_picked }}</div>
+        </div>
+        <div class="stat-card stat-orange">
+            <div class="stat-label">平均格口利用率</div>
+            <div class="stat-value">{{ avg_utilization }}%</div>
+        </div>
+    </div>
+
+    <section class="report-section">
+        <h3>近7日运营数据</h3>
+        <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>日期</th>
+                        <th>存件量</th>
+                        <th>取件量</th>
+                        <th>格口利用率</th>
+                        <th>存件/取件趋势</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for day in days %}
+                    <tr>
+                        <td>{{ day.date }}</td>
+                        <td>{{ day.stored }}</td>
+                        <td>{{ day.picked }}</td>
+                        <td>
+                            <div class="utilization-bar">
+                                <div class="utilization-fill" style="width: {{ day.utilization }}%;"></div>
+                                <span class="utilization-text">{{ day.utilization }}%</span>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="mini-chart">
+                                <div class="mini-bar stored-bar" style="height: {{ day.stored * 5 if day.stored else 2 }}px;" title="存件: {{ day.stored }}"></div>
+                                <div class="mini-bar picked-bar" style="height: {{ day.picked * 5 if day.picked else 2 }}px;" title="取件: {{ day.picked }}"></div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="report-section">
+        <h3>图例说明</h3>
+        <div class="legend">
+            <div class="legend-item">
+                <span class="legend-color stored-color"></span>
+                <span>当日存件量</span>
+            </div>
+            <div class="legend-item">
+                <span class="legend-color picked-color"></span>
+                <span>当日取件量</span>
+            </div>
+        </div>
+    </section>
+</div>
+{% endblock %}
