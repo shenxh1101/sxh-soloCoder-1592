@@ -22,7 +22,7 @@
     </div>
 
     <section class="report-section">
-        <h3>近7日运营数据</h3>
+        <h3>近7日运营数据 <small class="today-note">（今天的数据实时统计，历史数据取自每日快照）</small></h3>
         <div class="table-container">
             <table class="data-table">
                 <thead>
@@ -36,20 +36,34 @@
                 </thead>
                 <tbody>
                     {% for day in days %}
-                    <tr>
-                        <td>{{ day.date }}</td>
-                        <td>{{ day.stored }}</td>
-                        <td>{{ day.picked }}</td>
+                    <tr class="{% if day.is_today %}today-row{% endif %}">
+                        <td>
+                            {{ day.date }}
+                            {% if day.is_today %}
+                            <span class="today-badge">今天</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="count-badge stored-count">{{ day.stored }}</span>
+                        </td>
+                        <td>
+                            <span class="count-badge picked-count">{{ day.picked }}</span>
+                        </td>
                         <td>
                             <div class="utilization-bar">
-                                <div class="utilization-fill" style="width: {{ day.utilization }}%;"></div>
+                                <div class="utilization-fill {% if day.is_today %}fill-today{% endif %}"
+                                     style="width: {{ day.utilization }}%;"></div>
                                 <span class="utilization-text">{{ day.utilization }}%</span>
                             </div>
                         </td>
                         <td>
                             <div class="mini-chart">
-                                <div class="mini-bar stored-bar" style="height: {{ day.stored * 5 if day.stored else 2 }}px;" title="存件: {{ day.stored }}"></div>
-                                <div class="mini-bar picked-bar" style="height: {{ day.picked * 5 if day.picked else 2 }}px;" title="取件: {{ day.picked }}"></div>
+                                <div class="mini-bar stored-bar"
+                                     style="height: {{ day.stored * 5 if day.stored else 2 }}px;"
+                                     title="存件: {{ day.stored }}"></div>
+                                <div class="mini-bar picked-bar"
+                                     style="height: {{ day.picked * 5 if day.picked else 2 }}px;"
+                                     title="取件: {{ day.picked }}"></div>
                             </div>
                         </td>
                     </tr>
@@ -70,7 +84,21 @@
                 <span class="legend-color picked-color"></span>
                 <span>当日取件量</span>
             </div>
+            <div class="legend-item">
+                <span class="legend-color today-color"></span>
+                <span>当日实时数据</span>
+            </div>
         </div>
+    </section>
+
+    <section class="report-section">
+        <h3>数据说明</h3>
+        <ul class="report-notes">
+            <li><strong>存件量 / 取件量</strong>：对应日期实际发生的存取件次数</li>
+            <li><strong>格口利用率</strong>：占用格口小时数 ÷ 总格口小时数，反映空间使用强度</li>
+            <li><strong>今日数据</strong>：随存取件操作实时更新，利用率按当前时刻推算</li>
+            <li><strong>历史数据</strong>：取自每日快照表（DailyStats），每日0点后固化</li>
+        </ul>
     </section>
 </div>
 {% endblock %}

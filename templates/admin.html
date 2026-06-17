@@ -4,7 +4,13 @@
 
 {% block content %}
 <div class="admin-page">
-    <h2>⚙️ 管理后台</h2>
+    <div class="page-header">
+        <h2>⚙️ 管理后台</h2>
+        <div class="header-actions">
+            <a href="{{ url_for('export_csv', range_type='today') }}" class="btn btn-small btn-green">📥 导出今日</a>
+            <a href="{{ url_for('export_csv', range_type='7days') }}" class="btn btn-small btn-blue">📊 导出近7天</a>
+        </div>
+    </div>
 
     <div class="stats-cards">
         <div class="stat-card">
@@ -27,10 +33,11 @@
             <div class="stat-label">待取包裹</div>
             <div class="stat-value">{{ stats.stored_packages }}</div>
         </div>
-        <div class="stat-card stat-red">
+        <a href="{{ url_for('overdue_list') }}" class="stat-card stat-red stat-link">
             <div class="stat-label">超时包裹</div>
             <div class="stat-value">{{ stats.overdue_packages }}</div>
-        </div>
+            <div class="stat-link-hint">点击查看详情 →</div>
+        </a>
     </div>
 
     <section class="admin-section">
@@ -61,10 +68,14 @@
                         {% if locker.status == 'fault' %}恢复{% else %}故障{% endif %}
                     </button>
                 </div>
-                {% if locker.package %}
+                {% if locker.current_pkg %}
                 <div class="locker-package-info">
-                    <small>📱 {{ locker.package.phone[:3] }}****{{ locker.package.phone[-4:] }}</small>
+                    <small>📱 {{ locker.current_pkg.phone[:3] }}****{{ locker.current_pkg.phone[-4:] }}</small>
+                    <br>
+                    <small class="pkg-time">存入 {{ locker.current_pkg.stored_at.strftime('%H:%M') }}</small>
                 </div>
+                {% else %}
+                <div class="locker-package-empty"></div>
                 {% endif %}
             </div>
             {% endfor %}
@@ -72,7 +83,39 @@
     </section>
 
     <section class="admin-section">
-        <h3>包裹记录（最近50条）</h3>
+        <div class="section-header">
+            <h3>包裹记录（共{{ packages|length }}条）</h3>
+        </div>
+
+        <form method="GET" class="filter-form">
+            <div class="filter-row">
+                <div class="filter-item">
+                    <label>手机号</label>
+                    <input type="text" name="phone" placeholder="模糊搜索手机号" value="{{ filter_phone }}">
+                </div>
+                <div class="filter-item">
+                    <label>快递单号</label>
+                    <input type="text" name="tracking" placeholder="模糊搜索单号" value="{{ filter_tracking }}">
+                </div>
+                <div class="filter-item">
+                    <label>格口编号</label>
+                    <input type="text" name="locker" placeholder="如 A01" value="{{ filter_locker }}">
+                </div>
+                <div class="filter-item">
+                    <label>状态</label>
+                    <select name="status">
+                        <option value="">全部</option>
+                        <option value="stored" {% if filter_status == 'stored' %}selected{% endif %}>待取件</option>
+                        <option value="picked" {% if filter_status == 'picked' %}selected{% endif %}>已取件</option>
+                    </select>
+                </div>
+            </div>
+            <div class="filter-actions">
+                <button type="submit" class="btn btn-small btn-blue">🔍 筛选</button>
+                <a href="{{ url_for('admin') }}" class="btn btn-small btn-secondary">重置</a>
+            </div>
+        </form>
+
         <div class="table-container">
             <table class="data-table">
                 <thead>
@@ -88,9 +131,15 @@
                     </tr>
                 </thead>
                 <tbody>
+                    {% if packages %}
                     {% for pkg in packages %}
                     <tr class="{% if pkg.status == 'stored' and pkg.overdue_hours > 0 %}overdue-row{% endif %}">
-                        <td>{{ pkg.locker.code if pkg.locker else '-' }}</td>
+                        <td>
+                            {% if pkg.locker_id %}
+                                {% set l = lockers | selectattr('id', 'equalto', pkg.locker_id) | list %}
+                                {{ l[0].code if l else '-' }}
+                            {% else %}-{% endif %}
+                        </td>
                         <td>{{ pkg.tracking_no }}</td>
                         <td>{{ pkg.phone[:3] }}****{{ pkg.phone[-4:] }}</td>
                         <td>{{ pkg.pickup_code }}</td>
@@ -112,6 +161,11 @@
                         </td>
                     </tr>
                     {% endfor %}
+                    {% else %}
+                    <tr>
+                        <td colspan="8" class="empty-row">暂无匹配的包裹记录</td>
+                    </tr>
+                    {% endif %}
                 </tbody>
             </table>
         </div>

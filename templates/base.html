@@ -14,8 +14,20 @@
                 <a href="{{ url_for('index') }}">首页</a>
                 <a href="{{ url_for('store_package') }}">存件</a>
                 <a href="{{ url_for('pickup_package') }}">取件</a>
-                <a href="{{ url_for('admin') }}">管理后台</a>
-                <a href="{{ url_for('report') }}">统计报表</a>
+                {% if session.get('admin_id') %}
+                    <a href="{{ url_for('admin') }}">管理后台</a>
+                    <a href="{{ url_for('overdue_list') }}" class="nav-overdue">超时提醒
+                        {% set ns = namespace(overdue=0) %}
+                    </a>
+                    <a href="{{ url_for('report') }}">统计报表</a>
+                    <span class="nav-user">
+                        <span class="user-icon">👤</span>
+                        {{ session.get('admin_username') }}
+                    </span>
+                    <a href="{{ url_for('logout') }}" class="nav-logout">退出登录</a>
+                {% else %}
+                    <a href="{{ url_for('login') }}" class="nav-login">管理员登录</a>
+                {% endif %}
             </nav>
         </header>
 

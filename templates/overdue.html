@@ -1,0 +1,143 @@
+{% extends 'base.html' %}
+
+{% block title %}超时包裹提醒 - 智能快递柜系统{% endblock %}
+
+{% block content %}
+<div class="overdue-page">
+    <div class="page-header">
+        <h2>⏰ 超时包裹提醒</h2>
+        <div class="header-actions">
+            <a href="{{ url_for('admin') }}" class="btn btn-small btn-secondary">← 返回后台</a>
+        </div>
+    </div>
+
+    <div class="stats-cards">
+        <div class="stat-card stat-red">
+            <div class="stat-label">超时包裹总数</div>
+            <div class="stat-value">{{ packages|length }}</div>
+        </div>
+        <div class="stat-card stat-orange">
+            <div class="stat-label">未通知</div>
+            <div class="stat-value">{{ unnotified_count }}</div>
+        </div>
+        <div class="stat-card stat-blue">
+            <div class="stat-label">已通知</div>
+            <div class="stat-value">{{ notified_count }}</div>
+        </div>
+    </div>
+
+    <section class="admin-section">
+        <h3>超时包裹列表（超过24小时未取件）</h3>
+
+        {% if packages %}
+        <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>格口</th>
+                        <th>快递单号</th>
+                        <th>完整手机号</th>
+                        <th>存入时间</th>
+                        <th>已存放</th>
+                        <th>超时时长</th>
+                        <th>通知状态</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for pkg in packages %}
+                    <tr class="overdue-row">
+                        <td><strong>{{ pkg.locker_code }}</strong></td>
+                        <td>{{ pkg.tracking_no }}</td>
+                        <td>
+                            <span class="phone-full">{{ pkg.phone }}</span>
+                            <button class="btn-icon" onclick="copyPhone('{{ pkg.phone }}')" title="复制手机号">📋</button>
+                        </td>
+                        <td>{{ pkg.stored_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                        <td><strong class="hours-total">{{ pkg.total_hours }}h</strong></td>
+                        <td>
+                            <span class="overdue-badge">超时 {{ pkg.overdue_hours }}h</span>
+                        </td>
+                        <td id="notify-status-{{ pkg.id }}">
+                            {% if pkg.notified_at %}
+                            <span class="notify-badge notified">
+                                ✅ 已通知<br>
+                                <small>{{ pkg.notified_at.strftime('%m-%d %H:%M') }}</small>
+                            </span>
+                            {% else %}
+                            <span class="notify-badge unnotified">
+                                ⚠️ 未通知
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if not pkg.notified_at %}
+                            <button class="btn btn-small btn-green"
+                                    id="notify-btn-{{ pkg.id }}"
+                                    onclick="markNotified({{ pkg.id }})">
+                                📞 记录已通知
+                            </button>
+                            {% else %}
+                            <button class="btn btn-small btn-secondary"
+                                    onclick="markNotified({{ pkg.id }})">
+                                🔄 更新时间
+                            </button>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <p>🎉 太棒了！当前没有超时未取的包裹</p>
+            <a href="{{ url_for('admin') }}" class="btn btn-secondary">返回管理后台</a>
+        </div>
+        {% endif %}
+    </section>
+
+    <section class="admin-section">
+        <h3>📋 处理建议</h3>
+        <ol class="suggestion-list">
+            <li>优先通知超时时间最长的包裹收件人（列表按存入时间升序排列）</li>
+            <li>联系收件人时请提供：格口编号、快递单号、存入时间等信息</li>
+            <li>通知完成后点击「记录已通知」按钮，方便后续追踪</li>
+            <li>超过72小时仍未取件的，可考虑联系寄件方退回处理</li>
+        </ol>
+    </section>
+</div>
+
+<script>
+function markNotified(packageId) {
+    if (!confirm('确认记录/更新该包裹的通知时间吗？')) return;
+    fetch(`/admin/overdue/${packageId}/notify`, { method: 'POST' })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                const statusEl = document.getElementById(`notify-status-${packageId}`);
+                statusEl.innerHTML = `
+                    <span class="notify-badge notified">
+                        ✅ 已通知<br>
+                        <small>${data.notified_at}</small>
+                    </span>
+                `;
+                const btnEl = document.getElementById(`notify-btn-${packageId}`);
+                if (btnEl) {
+                    btnEl.textContent = '🔄 更新时间';
+                    btnEl.className = 'btn btn-small btn-secondary';
+                }
+                alert(data.message);
+            }
+        });
+}
+
+function copyPhone(phone) {
+    navigator.clipboard.writeText(phone).then(() => {
+        alert('手机号已复制：' + phone);
+    }).catch(() => {
+        alert('复制失败，请手动复制：' + phone);
+    });
+}
+</script>
+{% endblock %}
