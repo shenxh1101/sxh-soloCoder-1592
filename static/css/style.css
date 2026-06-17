@@ -82,6 +82,16 @@ body {
     color: white !important;
 }
 
+.nav-pwd {
+    background: #f3e5f5 !important;
+    color: #6a1b9a !important;
+}
+
+.nav-pwd:hover {
+    background: #8e24aa !important;
+    color: white !important;
+}
+
 .nav-user {
     padding: 8px 14px;
     background: #e3f2fd;
@@ -1025,3 +1035,104 @@ h3 small {
     .filter-row { grid-template-columns: 1fr; }
     .page-header { flex-direction: column; }
 }
+
+.change-pwd-card {
+    max-width: 520px;
+    margin: 24px auto;
+    background: #fff;
+    border-radius: 16px;
+    padding: 32px;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+    border: 1px solid #eee;
+}
+
+.change-pwd-info {
+    background: #f5f5f5;
+    padding: 14px 16px;
+    border-radius: 10px;
+    margin-bottom: 24px;
+    font-size: 14px;
+    color: #555;
+    line-height: 1.8;
+}
+
+.change-pwd-info strong {
+    color: #1565c0;
+}
+
+.change-pwd-tip {
+    font-size: 12px;
+    color: #999;
+    margin-top: 4px;
+}
+
+.change-pwd-form .form-field {
+    margin-bottom: 20px;
+}
+
+.change-pwd-form label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #444;
+}
+
+.change-pwd-form input {
+    width: 100%;
+    padding: 12px 14px;
+    border: 2px solid #e0e0e0;
+    border-radius: 10px;
+    font-size: 15px;
+    transition: border-color 0.2s;
+    font-family: inherit;
+    box-sizing: border-box;
+}
+
+.change-pwd-form input:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+.change-pwd-form .form-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 8px;
+}
+
+.locker-fault-time {
+    padding: 4px 0 6px;
+    text-align: center;
+}
+
+.locker-fault-time small {
+    color: #c62828;
+    font-weight: 500;
+    background: #ffebee;
+    padding: 2px 6px;
+    border-radius: 6px;
+}
+
+.data-table th:first-child,
+.data-table td:first-child input[type="checkbox"] {
+    cursor: pointer;
+    accent-color: #667eea;
+    width: 18px;
+    height: 18px;
+}
+
+#batchNotifyBtn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+#batchNotifyBtn:not(:disabled) {
+    animation: pulse 1.8s infinite;
+}
+
+@keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.4); }
+    70% { box-shadow: 0 0 0 8px rgba(76, 175, 80, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0); }
+}
+
